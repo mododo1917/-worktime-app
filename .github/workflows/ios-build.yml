@@ -1,0 +1,69 @@
+# iOS 云构建：在 GitHub 的 macOS 服务器上编译出未签名的 IPA。
+# 你下载后，在 Windows 上用 Sideloadly 配合自己的 Apple ID 签名安装到 iPad。
+#
+# 使用方式：
+#   1. 把整个项目推到 GitHub 仓库
+#   2. 打开仓库的 Actions 页面 → 左侧选 "iOS 云构建" → 点 "Run workflow" → 运行
+#   3. 构建完成后，在本次运行的 Artifacts 里下载 工时记录-iOS.ipa
+#
+# 也可以给仓库打 tag（v1.0、v1.1...）自动触发构建。
+
+name: iOS 云构建
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-ios:
+    name: 编译 iOS 安装包
+    runs-on: macos-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装 npm 依赖
+        run: npm ci
+
+      - name: 构建 Web 资源
+        run: npm run build
+
+      - name: 同步到 iOS 工程
+        run: npx cap sync ios
+
+      - name: 安装 iOS 原生依赖（CocoaPods）
+        working-directory: ios/App
+        run: pod install
+
+      - name: 编译 iOS App（不签名，供 Sideloadly 重新签名）
+        run: |
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: 打包成 IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qr 工时记录-iOS.ipa Payload
+
+      - name: 上传 IPA 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: worktime-app-ios
+          path: 工时记录-iOS.ipa
+          if-no-files-found: error

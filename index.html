@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3f8cff" />
+    <title>工时记录</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // 老手机 WebView 的兜底：缺失的新 API 补个空实现，避免 Element Plus 等组件一启动就崩
+      ;(function () {
+        var w = window
+        if (!w.ResizeObserver) {
+          w.ResizeObserver = function () {}
+          w.ResizeObserver.prototype = {
+            observe: function () {},
+            unobserve: function () {},
+            disconnect: function () {},
+          }
+        }
+        if (!w.IntersectionObserver) {
+          w.IntersectionObserver = function () {}
+          w.IntersectionObserver.prototype = {
+            observe: function () {},
+            unobserve: function () {},
+            disconnect: function () {},
+          }
+        }
+        // 任何 JS 错误直接显示到屏幕上：就算还有兼容性问题，也看得见字，而不是一片白
+        function showError(e) {
+          try {
+            var msg = (e && (e.stack || e.message)) || String(e)
+            var el = document.createElement('pre')
+            el.style.cssText =
+              'position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff;color:#c00;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:0;'
+            el.textContent = msg
+            document.body.appendChild(el)
+          } catch (_) {}
+        }
+        w.addEventListener('error', function (e) { showError(e.error || e.message) })
+        w.addEventListener('unhandledrejection', function (e) { showError(e.reason) })
+      })()
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

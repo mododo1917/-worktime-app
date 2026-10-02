@@ -1,0 +1,8 @@
+{
+  "appId": "com.zuomian.worktime",
+  "appName": "工时记录",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http"
+  }
+}
